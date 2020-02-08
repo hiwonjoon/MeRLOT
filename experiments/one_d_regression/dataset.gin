@@ -1,0 +1,18 @@
+# Datset Setting
+import tasks.one_d_regression
+
+tasks.one_d_regression.Dataset.dtype = 'training'
+tasks.one_d_regression.Dataset.c_interval_size = 4
+tasks.one_d_regression.Dataset.c_len_range = (7,15)
+tasks.one_d_regression.Dataset.q_len_range = (5,10)
+
+
+# Train setting
+import evals.one_d_regression
+
+train.Dataset = @tasks.one_d_regression.Dataset
+train.train_iter = 100000
+train.log_every_it = 50
+train.batch_size = 32
+train.eval_every_minutes = 3
+train.eval_fn = @evals.one_d_regression.eval_

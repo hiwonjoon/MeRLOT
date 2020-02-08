@@ -1,0 +1,53 @@
+include './experiments/one_d_regression/dataset.gin'
+
+# Model Setting
+import modules
+
+r_embed = 128
+nn_size = 128
+xy_embed = 128
+
+num_layers = 2
+
+num_heads = 8
+num_stack = 2
+
+lr = 5e-5
+
+xy_det/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+xy_det/modules.multi_dense.MultiInputDense.dim = %nn_size
+xy_det/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+xy_lat/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+xy_lat/modules.multi_dense.MultiInputDense.dim = %nn_size
+xy_lat/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+x/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+x/modules.multi_dense.MultiInputDense.dim = %nn_size
+x/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+z/modules.multi_dense.MultiInputDense.num_layers = 1
+z/modules.multi_dense.MultiInputDense.dim = %r_embed
+
+decoder/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+decoder/modules.multi_dense.MultiInputDense.dim = %nn_size
+
+import models
+
+models.ANP.d_dim = %r_embed
+models.ANP.num_heads = %num_heads
+models.ANP.xy_embedder_fn_det = @xy_det/modules.multi_dense.MultiInputDense
+models.ANP.xy_embedder_fn_lat = @xy_lat/modules.multi_dense.MultiInputDense
+models.ANP.x_embedder_fn = @x/modules.multi_dense.MultiInputDense
+models.ANP.num_self_attention_det = %num_stack
+models.ANP.num_self_attention_lat = %num_stack
+models.ANP.z_dist_fn = @z/modules.multi_dense.MultiInputDense
+models.ANP.decoder_fn = @decoder/modules.multi_dense.MultiInputDense
+models.ANP.anp_style_sigma = True
+#models.ANP.max_grad_norm = 0.
+models.ANP.anp_style_sigma = True
+models.ANP.learning_rate = %lr
+
+# Train setting
+
+train.Model = @models.ANP

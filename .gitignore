@@ -1,0 +1,6 @@
+log/
+envs/*.pkl
+datasets
+models/
+/*.pdf
+_maze_figs/

@@ -1,0 +1,52 @@
+include './experiments/one_d_regression/dataset.gin'
+
+# Model Setting
+import modules
+
+r_embed = 128
+nn_size = 128
+xy_embed = 128
+
+num_layers = 2
+
+num_heads = 8
+num_stack = 2
+
+lr = 5e-5
+
+predictor/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+predictor/modules.multi_dense.MultiInputDense.dim = %nn_size
+
+modules.updater.MetaFunUpdater.num_layers = %num_layers
+modules.updater.MetaFunUpdater.dim = %nn_size
+modules.updater.MetaFunUpdater.embed_dim = %r_embed
+modules.updater.MetaFunUpdater.alpha = 0.01
+
+xy/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+xy/modules.multi_dense.MultiInputDense.dim = %nn_size
+xy/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+x/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+x/modules.multi_dense.MultiInputDense.dim = %nn_size
+x/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+modules.attention.Encoder.num_heads = %num_heads
+modules.attention.Encoder.d_model = %xy_embed
+
+modules.attention.Decoder.num_heads = %num_heads
+modules.attention.Decoder.d_model = %xy_embed
+
+import models
+
+models.MetaFunWithANP.predictor_fn = @predictor/modules.multi_dense.MultiInputDense
+models.MetaFunWithANP.updater_fn = @modules.updater.MetaFunUpdater
+models.MetaFunWithANP.xy_embedder_fn = @xy/modules.multi_dense.MultiInputDense
+models.MetaFunWithANP.x_embedder_fn = @x/modules.multi_dense.MultiInputDense
+models.MetaFunWithANP.L = 3
+models.MetaFunWithANP.num_encoder_decoder_stack = %num_stack
+models.MetaFunWithANP.learning_rate = %lr
+#models.MetaFunWithANP.max_grad_norm = 10.0
+models.MetaFunWithANP.dot_product_attention_scale = True
+models.MetaFunWithANP.anp_style_sigma = True
+
+train.Model = @models.MetaFunWithANP

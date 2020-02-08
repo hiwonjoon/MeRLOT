@@ -1,0 +1,61 @@
+include './experiments/one_d_regression/dataset.gin'
+
+# Model Setting
+import modules
+
+r_embed = 128
+nn_size = 128
+xy_embed = 128
+
+num_layers = 2
+
+num_heads = 8
+num_stack = 2
+
+lr = 5e-5
+
+f_i/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+f_i/modules.multi_dense.MultiInputDense.dim = %nn_size
+f_i/modules.multi_dense.MultiInputDense.out_dim = %r_embed
+
+r_ik/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+r_ik/modules.multi_dense.MultiInputDense.dim = %nn_size
+r_ik/modules.multi_dense.MultiInputDense.out_dim = %r_embed
+
+modules.prediction.ProbabilisticPrediction.num_layers = %num_layers
+modules.prediction.ProbabilisticPrediction.dim = %nn_size
+
+modules.updater.MetaFunUpdaterLocal.num_layers = %num_layers
+modules.updater.MetaFunUpdaterLocal.dim = %nn_size
+modules.updater.MetaFunUpdaterLocal.embed_dim = %r_embed
+modules.updater.MetaFunUpdaterLocal.alpha = 0.01
+
+xy/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+xy/modules.multi_dense.MultiInputDense.dim = %nn_size
+xy/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+x/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+x/modules.multi_dense.MultiInputDense.dim = %nn_size
+x/modules.multi_dense.MultiInputDense.out_dim = %xy_embed
+
+modules.attention.Encoder.num_heads = %num_heads
+modules.attention.Encoder.d_model = %xy_embed
+
+modules.attention.Decoder.num_heads = %num_heads
+modules.attention.Decoder.d_model = %xy_embed
+
+import models
+
+models.Merlot.f_i_embedder_fn = @f_i/modules.multi_dense.MultiInputDense
+models.Merlot.r_ik_embedder_fn = @r_ik/modules.multi_dense.MultiInputDense
+models.Merlot.predictor_fn = @modules.prediction.ProbabilisticPrediction
+models.Merlot.updater_fn = @modules.updater.MetaFunUpdaterLocal
+models.Merlot.xy_embedder_fn = @xy/modules.multi_dense.MultiInputDense
+models.Merlot.x_embedder_fn = @x/modules.multi_dense.MultiInputDense
+models.Merlot.L = 3
+models.Merlot.num_encoder_decoder_stack = %num_stack
+models.Merlot.learning_rate = %lr
+models.Merlot.dot_product_attention_scale = True
+modules.prediction.ProbabilisticPrediction.anp_style_sigma = True
+
+train.Model = @models.Merlot

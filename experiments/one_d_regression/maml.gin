@@ -1,0 +1,28 @@
+include './experiments/one_d_regression/dataset.gin'
+
+# Model Setting
+import modules.maml
+
+nn_size = 512
+nn_layers = 5
+num_updates = 3
+
+modules.maml.DenseNetProbPred.num_layers = %nn_layers
+modules.maml.DenseNetProbPred.dim = %nn_size
+modules.maml.DenseNetProbPred.anp_style_sigma = True
+
+import models
+
+models.MAML.net_fn = @modules.maml.DenseNetProbPred
+models.MAML.num_inner_updates = 3
+models.MAML.alpha = 0.01
+models.MAML.fo_approx = True
+models.MAML.clip_by_global_norm = True
+models.MAML.finetune_grad_clip = 5.0
+models.MAML.grad_clip = 5.0
+
+meta_batch_size = 32
+
+models.MAML.meta_batch_size = %meta_batch_size
+
+train.Model = @models.MAML

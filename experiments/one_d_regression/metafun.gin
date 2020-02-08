@@ -1,0 +1,36 @@
+include './experiments/one_d_regression/dataset.gin'
+
+# Model Setting
+import modules
+
+r_embed = 128
+nn_dim = 128
+key_embed = 128
+
+num_layers = 2
+
+lr = 5e-5
+
+modules.updater.MetaFunUpdater.num_layers = %num_layers
+modules.updater.MetaFunUpdater.dim = %nn_dim
+modules.updater.MetaFunUpdater.embed_dim = %r_embed
+modules.updater.MetaFunUpdater.alpha = 0.01
+
+x/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+x/modules.multi_dense.MultiInputDense.dim = %nn_dim
+x/modules.multi_dense.MultiInputDense.out_dim = %key_embed
+
+decoder/modules.multi_dense.MultiInputDense.num_layers = %num_layers
+decoder/modules.multi_dense.MultiInputDense.dim = %nn_dim
+
+import models
+
+models.MetaFun.updater_fn = @modules.updater.MetaFunUpdater
+models.MetaFun.x_embedder_fn = @x/modules.multi_dense.MultiInputDense
+models.MetaFun.decoder_fn = @decoder/modules.multi_dense.MultiInputDense
+models.MetaFun.L = 3
+models.MetaFun.learning_rate = %lr
+#models.MetaFun.max_grad_norm = 5.0
+models.MetaFun.anp_style_sigma = True
+
+train.Model = @models.MetaFun
